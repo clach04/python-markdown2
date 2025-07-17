@@ -2371,7 +2371,33 @@ def calculate_toc_html(toc):
         return '  ' * (len(h_stack) - 1)
     lines = []
     h_stack = [0]   # stack of header-level numbers
+    # clach04 generate TOC numbers setup
+    counters = {}
+    min_header_level = 2  # two is the lowest level header, not h1 - NOT differs with WIP auto css count
+    min_header_level = 1  # one is the lowest level header matches old readme and WIP css auto count
+    last_level = -1
+    # clach04 generate TOC numbers post-setup
+    #print('DEBUG %r' % ((toc,),))
     for level, id, name in toc:
+        # clach04 generate TOC numbers START
+        #print('DEBUG %r' % ((level, id, name),))
+        #print('\tDEBUG %r' % ((counters,),))
+        if last_level > level:
+            for tmp_counter in list(counters.keys()):
+                if tmp_counter > level:
+                    del(counters[tmp_counter])
+        #print('\tDEBUG %r' % ((counters,),))
+        count_for_this_level = counters.get(level, min_header_level - 1)
+        count_for_this_level += 1
+        counters[level] = count_for_this_level
+        entry_count = []
+        current_count = level
+        while current_count >= min_header_level:
+            entry_count.insert(0, '%d' % counters[current_count])
+            current_count -= 1
+        counter_string = '.'.join(entry_count)
+        name = counter_string + ' ' + name  # name only used for TOC addition so reduce code changes by hacking name in place
+        # clach04 generate TOC numbers END
         if level > h_stack[-1]:
             lines.append("%s<ul>" % indent())
             h_stack.append(level)
@@ -2385,6 +2411,7 @@ def calculate_toc_html(toc):
                 lines.append("%s</ul></li>" % indent())
         lines.append('%s<li><a href="#%s">%s</a>' % (
             indent(), id, name))
+        last_level = level
     while len(h_stack) > 1:
         h_stack.pop()
         if not lines[-1].endswith("</li>"):
